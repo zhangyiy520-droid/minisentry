@@ -1,0 +1,23 @@
+-- Drop indexes
+DROP INDEX IF EXISTS idx_issue_comments_issue_id;
+DROP INDEX IF EXISTS idx_issue_activities_created_at;
+DROP INDEX IF EXISTS idx_issue_activities_issue_id;
+DROP INDEX IF EXISTS idx_users_active;
+DROP INDEX IF EXISTS idx_users_email;
+DROP INDEX IF EXISTS idx_projects_dsn;
+DROP INDEX IF EXISTS idx_projects_organization_id;
+DROP INDEX IF EXISTS idx_organization_members_user_id;
+DROP INDEX IF EXISTS idx_organization_members_org_id;
+DROP INDEX IF EXISTS idx_events_stack_trace;
+DROP INDEX IF EXISTS idx_events_user_context;
+DROP INDEX IF EXISTS idx_events_tags;
+DROP INDEX IF EXISTS idx_issues_title_fts;
+DROP INDEX IF EXISTS idx_events_message_fts;
+DROP INDEX IF EXISTS idx_issues_times_seen;
+DROP INDEX IF EXISTS idx_issues_last_seen;
+DROP INDEX IF EXISTS idx_issues_project_status;
+DROP INDEX IF EXISTS idx_events_environment;
+DROP INDEX IF EXISTS idx_events_level;
+DROP INDEX IF EXISTS idx_events_fingerprint;
+DROP INDEX IF EXISTS idx_events_project_timestamp;
+DROP INDEX IF EXISTS idx_events_issue_id;

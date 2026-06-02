@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MiniSentry JavaScript SDK Example</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+            background: #f8fafc;
+        }
+        .container {
+            background: white;
+            border-radius: 8px;
+            padding: 30px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #1f2937;
+            border-bottom: 2px solid #e5e7eb;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #374151;
+            margin-top: 30px;
+        }
+        .config-section {
+            background: #f3f4f6;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .button-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        button {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 14px;
+        }
+        .btn-error {
+            background: #ef4444;
+            color: white;
+        }
+        .btn-error:hover {
+            background: #dc2626;
+        }
+        .btn-warning {
+            background: #f59e0b;
+            color: white;
+        }
+        .btn-warning:hover {
+            background: #d97706;
+        }
+        .btn-info {
+            background: #3b82f6;
+            color: white;
+        }
+        .btn-info:hover {
+            background: #2563eb;
+        }
+        .btn-success {
+            background: #10b981;
+            color: white;
+        }
+        .btn-success:hover {
+            background: #059669;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+        .status.success {
+            background: #d1fae5;
+            color: #047857;
+            border: 1px solid #a7f3d0;
+        }
+        .status.error {
+            background: #fee2e2;
+            color: #dc2626;
+            border: 1px solid #fecaca;
+        }
+        .status.info {
+            background: #dbeafe;
+            color: #1d4ed8;
+            border: 1px solid #93c5fd;
+        }
+        input, select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            margin: 5px 0;
+            font-size: 14px;
+        }
+        label {
+            display: block;
+            margin-top: 10px;
+            font-weight: 500;
+            color: #374151;
+        }
+        .code-block {
+            background: #1f2937;
+            color: #f9fafb;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            overflow-x: auto;
+            margin: 10px 0;
+        }
+        .metric-item {
+            display: inline-block;
+            background: #f3f4f6;
+            padding: 8px 12px;
+            border-radius: 4px;
+            margin: 5px;
+            border: 1px solid #d1d5db;
+        }
+        .auto-errors {
+            background: #fef3c7;
+            border: 1px solid #fcd34d;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .user-context {
+            background: #e0f2fe;
+            border: 1px solid #81d4fa;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 MiniSentry JavaScript SDK Example</h1>
+        <p>This example demonstrates how to integrate MiniSentry error tracking into your JavaScript application. Use the buttons below to trigger different types of errors and see how they're captured and sent to your MiniSentry instance.</p>
+
+        <!-- Configuration Section -->
+        <div class="config-section">
+            <h2>📋 Configuration</h2>
+            <p>Configure your MiniSentry project details below. You can get these values from your MiniSentry dashboard.</p>
+            
+            <label for="dsn">Project DSN (Data Source Name):</label>
+            <input type="text" id="dsn" placeholder="https://your-public-key@your-host/api/your-project-id/store/" value="http://localhost:8080/api/your-project-id/store/">
+            
+            <label for="environment">Environment:</label>
+            <select id="environment">
+                <option value="development">Development</option>
+                <option value="staging">Staging</option>
+                <option value="production">Production</option>
+            </select>
+            
+            <label for="release">Release Version:</label>
+            <input type="text" id="release" placeholder="v1.0.0" value="v1.0.0-example">
+            
+            <label for="userId">User ID (optional):</label>
+            <input type="text" id="userId" placeholder="user123" value="demo-user">
+            
+            <label for="userEmail">User Email (optional):</label>
+            <input type="text" id="userEmail" placeholder="user@example.com" value="demo@example.com">
+            
+            <button onclick="initializeSentry()" class="btn-success">Initialize MiniSentry SDK</button>
+        </div>
+
+        <!-- Status Display -->
+        <div id="status" class="status info">SDK not initialized. Please configure and initialize above.</div>
+
+        <!-- Manual Error Triggers -->
+        <h2>🔥 Manual Error Triggers</h2>
+        <p>Click these buttons to manually trigger different types of errors:</p>
+        
+        <div class="button-grid">
+            <button onclick="triggerTypeError()" class="btn-error">TypeError</button>
+            <button onclick="triggerReferenceError()" class="btn-error">ReferenceError</button>
+            <button onclick="triggerSyntaxError()" class="btn-error">SyntaxError</button>
+            <button onclick="triggerRangeError()" class="btn-error">RangeError</button>
+            <button onclick="triggerCustomError()" class="btn-error">Custom Error</button>
+            <button onclick="triggerAsyncError()" class="btn-error">Async Error</button>
+            <button onclick="triggerPromiseRejection()" class="btn-error">Promise Rejection</button>
+            <button onclick="triggerNetworkError()" class="btn-error">Network Error</button>
+            <button onclick="triggerWarning()" class="btn-warning">Warning</button>
+            <button onclick="triggerInfo()" class="btn-info">Info Message</button>
+            <button onclick="triggerWithTags()" class="btn-info">Error with Tags</button>
+            <button onclick="triggerWithContext()" class="btn-info">Error with Context</button>
+        </div>
+
+        <!-- Automatic Error Monitoring -->
+        <div class="auto-errors">
+            <h2>🤖 Automatic Error Monitoring</h2>
+            <p>The SDK automatically captures unhandled errors and promise rejections. Try these actions:</p>
+            <div class="button-grid">
+                <button onclick="causeGlobalError()" class="btn-warning">Cause Global Error</button>
+                <button onclick="causeUnhandledRejection()" class="btn-warning">Unhandled Promise</button>
+                <button onclick="startRandomErrors()" class="btn-warning">Start Random Errors</button>
+                <button onclick="stopRandomErrors()" class="btn-success">Stop Random Errors</button>
+            </div>
+        </div>
+
+        <!-- User Context Demo -->
+        <div class="user-context">
+            <h2>👤 User Context & Tags</h2>
+            <p>Demonstrate how user context and custom tags are attached to errors:</p>
+            <div class="button-grid">
+                <button onclick="setUserContext()" class="btn-info">Set User Context</button>
+                <button onclick="setCustomTags()" class="btn-info">Set Custom Tags</button>
+                <button onclick="addBreadcrumb()" class="btn-info">Add Breadcrumb</button>
+                <button onclick="triggerWithFullContext()" class="btn-error">Error with Full Context</button>
+            </div>
+        </div>
+
+        <!-- Performance Metrics -->
+        <h2>📊 Performance Metrics</h2>
+        <p>Track performance and send custom metrics:</p>
+        <div class="button-grid">
+            <button onclick="measurePageLoad()" class="btn-info">Measure Page Load</button>
+            <button onclick="measureFunction()" class="btn-info">Measure Function</button>
+            <button onclick="sendCustomMetric()" class="btn-info">Send Custom Metric</button>
+        </div>
+        <div id="metrics"></div>
+
+        <!-- SDK Implementation -->
+        <h2>💻 Implementation Code</h2>
+        <p>Here's how the MiniSentry SDK is implemented in this example:</p>
+        <div class="code-block">// Initialize MiniSentry SDK
+const MiniSentry = {
+    dsn: null,
+    config: {},
+    initialized: false,
+
+    init(config) {
+        this.dsn = config.dsn;
+        this.config = { ...config };
+        this.initialized = true;
+        
+        // Set up global error handlers
+        this.setupGlobalHandlers();
+        console.log('MiniSentry SDK initialized', config);
+    },
+
+    captureException(error, extra = {}) {
+        if (!this.initialized) {
+            console.warn('MiniSentry not initialized');
+            return;
+        }
+
+        const event = this.createEvent('error', {
+            exception: this.parseError(error),
+            extra
+        });
+
+        return this.sendEvent(event);
+    },
+
+    captureMessage(message, level = 'info', extra = {}) {
+        const event = this.createEvent(level, {
+            message,
+            extra
+        });
+
+        return this.sendEvent(event);
+    }
+};
+
+// Usage in your application
+MiniSentry.init({
+    dsn: 'your-dsn-here',
+    environment: 'production',
+    release: '1.0.0'
+});
+
+// Automatic error capture
+try {
+    riskyOperation();
+} catch (error) {
+    MiniSentry.captureException(error);
+}</div>
+
+        <!-- API Response Log -->
+        <h2>📝 API Response Log</h2>
+        <div id="responseLog" class="code-block" style="max-height: 300px; overflow-y: auto;">
+            Responses from MiniSentry API will appear here...
+        </div>
+    </div>
+
+    <script>
+        // MiniSentry SDK Implementation
+        const MiniSentry = {
+            dsn: null,
+            config: {},
+            initialized: false,
+            breadcrumbs: [],
+            user: {},
+            tags: {},
+            context: {},
+
+            init(config) {
+                this.dsn = config.dsn;
+                this.config = {
+                    environment: 'development',
+                    release: '1.0.0',
+                    ...config
+                };
+                this.initialized = true;
+                
+                // Set up global error handlers
+                this.setupGlobalHandlers();
+                
+                this.updateStatus('SDK initialized successfully', 'success');
+                console.log('MiniSentry SDK initialized', this.config);
+            },
+
+            setupGlobalHandlers() {
+                // Capture unhandled errors
+                window.addEventListener('error', (event) => {
+                    this.captureException(event.error || new Error(event.message), {
+                        filename: event.filename,
+                        lineno: event.lineno,
+                        colno: event.colno,
+                        source: 'window.onerror'
+                    });
+                });
+
+                // Capture unhandled promise rejections
+                window.addEventListener('unhandledrejection', (event) => {
+                    this.captureException(event.reason || new Error('Unhandled Promise Rejection'), {
+                        source: 'unhandledrejection'
+                    });
+                });
+            },
+
+            generateEventId() {
+                return 'xxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                    const r = Math.random() * 16 | 0;
+                    const v = c == 'x' ? r : (r & 0x3 | 0x8);
+                    return v.toString(16);
+                });
+            },
+
+            createEvent(level, data) {
+                const event = {
+                    event_id: this.generateEventId(),
+                    timestamp: new Date().toISOString(),
+                    level: level,
+                    platform: 'javascript',
+                    environment: this.config.environment,
+                    release: this.config.release,
+                    server_name: window.location.hostname,
+                    request: {
+                        url: window.location.href,
+                        method: 'GET',
+                        headers: {
+                            'User-Agent': navigator.userAgent
+                        }
+                    },
+                    user: this.user,
+                    tags: {
+                        ...this.tags,
+                        browser: this.getBrowserInfo(),
+                        os: this.getOSInfo(),
+                        url: window.location.pathname
+                    },
+                    extra: {
+                        ...this.context,
+                        ...data.extra
+                    },
+                    breadcrumbs: [...this.breadcrumbs]
+                };
+
+                // Add exception data if present
+                if (data.exception) {
+                    event.exception = data.exception;
+                }
+
+                // Add message if present
+                if (data.message) {
+                    event.message = data.message;
+                }
+
+                return event;
+            },
+
+            parseError(error) {
+                const stackTrace = this.parseStackTrace(error.stack || '');
+                
+                return {
+                    values: [{
+                        type: error.name || 'Error',
+                        value: error.message || 'Unknown error',
+                        stacktrace: {
+                            frames: stackTrace
+                        }
+                    }]
+                };
+            },
+
+            parseStackTrace(stack) {
+                const lines = stack.split('\n');
+                const frames = [];
+
+                for (const line of lines) {
+                    const match = line.match(/at\s+(.+?)\s+\((.+?):(\d+):(\d+)\)/);
+                    if (match) {
+                        frames.push({
+                            function: match[1],
+                            filename: match[2],
+                            lineno: parseInt(match[3]),
+                            colno: parseInt(match[4]),
+                            context_line: line.trim()
+                        });
+                    } else if (line.includes('@')) {
+                        // Firefox format
+                        const parts = line.split('@');
+                        if (parts.length === 2) {
+                            const location = parts[1].split(':');
+                            frames.push({
+                                function: parts[0] || 'anonymous',
+                                filename: location.slice(0, -2).join(':'),
+                                lineno: parseInt(location[location.length - 2]) || 0,
+                                colno: parseInt(location[location.length - 1]) || 0,
+                                context_line: line.trim()
+                            });
+                        }
+                    }
+                }
+
+                return frames.slice(0, 10); // Limit to 10 frames
+            },
+
+            getBrowserInfo() {
+                const ua = navigator.userAgent;
+                if (ua.includes('Chrome')) return 'Chrome';
+                if (ua.includes('Firefox')) return 'Firefox';
+                if (ua.includes('Safari')) return 'Safari';
+                if (ua.includes('Edge')) return 'Edge';
+                return 'Unknown';
+            },
+
+            getOSInfo() {
+                const platform = navigator.platform;
+                if (platform.includes('Win')) return 'Windows';
+                if (platform.includes('Mac')) return 'macOS';
+                if (platform.includes('Linux')) return 'Linux';
+                return platform;
+            },
+
+            addBreadcrumb(breadcrumb) {
+                this.breadcrumbs.push({
+                    timestamp: new Date().toISOString(),
+                    level: 'info',
+                    ...breadcrumb
+                });
+
+                // Keep only last 10 breadcrumbs
+                if (this.breadcrumbs.length > 10) {
+                    this.breadcrumbs = this.breadcrumbs.slice(-10);
+                }
+            },
+
+            setUser(user) {
+                this.user = { ...this.user, ...user };
+            },
+
+            setTag(key, value) {
+                this.tags[key] = value;
+            },
+
+            setContext(key, value) {
+                this.context[key] = value;
+            },
+
+            async sendEvent(event) {
+                if (!this.dsn) {
+                    console.warn('MiniSentry DSN not configured');
+                    return;
+                }
+
+                try {
+                    const response = await fetch(this.dsn, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(event)
+                    });
+
+                    const result = await response.text();
+                    
+                    this.logResponse(event, response, result);
+                    
+                    if (response.ok) {
+                        this.updateStatus(`✅ Event sent successfully (${event.level}): ${event.message || event.exception?.values[0]?.value}`, 'success');
+                    } else {
+                        this.updateStatus(`❌ Failed to send event: ${response.status} ${response.statusText}`, 'error');
+                    }
+
+                    return response.ok;
+                } catch (error) {
+                    this.updateStatus(`❌ Network error: ${error.message}`, 'error');
+                    this.logResponse(event, null, error.message);
+                    return false;
+                }
+            },
+
+            captureException(error, extra = {}) {
+                if (!this.initialized) {
+                    console.warn('MiniSentry not initialized');
+                    return;
+                }
+
+                const event = this.createEvent('error', {
+                    exception: this.parseError(error),
+                    extra
+                });
+
+                return this.sendEvent(event);
+            },
+
+            captureMessage(message, level = 'info', extra = {}) {
+                if (!this.initialized) {
+                    console.warn('MiniSentry not initialized');
+                    return;
+                }
+
+                const event = this.createEvent(level, {
+                    message,
+                    extra
+                });
+
+                return this.sendEvent(event);
+            },
+
+            updateStatus(message, type) {
+                const statusEl = document.getElementById('status');
+                statusEl.textContent = message;
+                statusEl.className = `status ${type}`;
+            },
+
+            logResponse(event, response, result) {
+                const logEl = document.getElementById('responseLog');
+                const timestamp = new Date().toLocaleTimeString();
+                const status = response ? response.status : 'ERROR';
+                const logEntry = `[${timestamp}] ${status} - ${event.level.toUpperCase()}: ${event.message || event.exception?.values[0]?.value}\nResponse: ${result}\n\n`;
+                
+                logEl.textContent = logEntry + logEl.textContent;
+            }
+        };
+
+        // Configuration functions
+        function initializeSentry() {
+            const dsn = document.getElementById('dsn').value;
+            const environment = document.getElementById('environment').value;
+            const release = document.getElementById('release').value;
+            const userId = document.getElementById('userId').value;
+            const userEmail = document.getElementById('userEmail').value;
+
+            if (!dsn) {
+                alert('Please enter a DSN');
+                return;
+            }
+
+            MiniSentry.init({
+                dsn: dsn,
+                environment: environment,
+                release: release
+            });
+
+            // Set user context if provided
+            if (userId || userEmail) {
+                MiniSentry.setUser({
+                    id: userId || undefined,
+                    email: userEmail || undefined,
+                    username: userId || undefined
+                });
+            }
+        }
+
+        // Error trigger functions
+        function triggerTypeError() {
+            MiniSentry.addBreadcrumb({
+                message: 'User clicked TypeError button',
+                category: 'ui.click'
+            });
+            
+            const obj = null;
+            obj.property.subProperty; // This will throw TypeError
+        }
+
+        function triggerReferenceError() {
+            MiniSentry.addBreadcrumb({
+                message: 'User clicked ReferenceError button',
+                category: 'ui.click'
+            });
+            
+            console.log(undefinedVariable); // This will throw ReferenceError
+        }
+
+        function triggerSyntaxError() {
+            MiniSentry.addBreadcrumb({
+                message: 'User clicked SyntaxError button',
+                category: 'ui.click'
+            });
+            
+            try {
+                eval('const invalid syntax here'); // This will throw SyntaxError
+            } catch (error) {
+                MiniSentry.captureException(error, {
+                    source: 'manual_trigger',
+                    trigger_type: 'syntax_error'
+                });
+            }
+        }
+
+        function triggerRangeError() {
+            MiniSentry.addBreadcrumb({
+                message: 'User clicked RangeError button',
+                category: 'ui.click'
+            });
+            
+            const arr = new Array(-1); // This will throw RangeError
+        }
+
+        function triggerCustomError() {
+            MiniSentry.addBreadcrumb({
+                message: 'User clicked Custom Error button',
+                category: 'ui.click'
+            });
+            
+            const error = new Error('This is a custom error for testing purposes');
+            error.name = 'CustomTestError';
+            MiniSentry.captureException(error, {
+                source: 'manual_trigger',
+                trigger_type: 'custom_error',
+                severity: 'high'
+            });
+        }
+
+        function triggerAsyncError() {
+            MiniSentry.addBreadcrumb({
+                message: 'User clicked Async Error button',
+                category: 'ui.click'
+            });
+            
+            setTimeout(() => {
+                throw new Error('Async error thrown in setTimeout');
+            }, 100);
+        }
+
+        function triggerPromiseRejection() {
+            MiniSentry.addBreadcrumb({
+                message: 'User clicked Promise Rejection button',
+                category: 'ui.click'
+            });
+            
+            Promise.reject(new Error('Unhandled promise rejection'));
+        }
+
+        function triggerNetworkError() {
+            MiniSentry.addBreadcrumb({
+                message: 'User clicked Network Error button',
+                category: 'ui.click'
+            });
+            
+            fetch('/non-existent-endpoint')
+                .catch(error => {
+                    MiniSentry.captureException(error, {
+                        source: 'network_request',
+                        endpoint: '/non-existent-endpoint'
+                    });
+                });
+        }
+
+        function triggerWarning() {
+            MiniSentry.captureMessage('This is a warning message', 'warning', {
+                source: 'manual_trigger',
+                component: 'test_suite'
+            });
+        }
+
+        function triggerInfo() {
+            MiniSentry.captureMessage('This is an info message', 'info', {
+                source: 'manual_trigger',
+                action: 'user_interaction'
+            });
+        }
+
+        function triggerWithTags() {
+            MiniSentry.setTag('test_button', 'with_tags');
+            MiniSentry.setTag('feature', 'error_testing');
+            
+            const error = new Error('Error with custom tags');
+            MiniSentry.captureException(error, {
+                source: 'manual_trigger',
+                has_tags: true
+            });
+        }
+
+        function triggerWithContext() {
+            MiniSentry.setContext('test_context', {
+                button_clicked: 'triggerWithContext',
+                timestamp: Date.now(),
+                random_value: Math.random()
+            });
+            
+            const error = new Error('Error with custom context');
+            MiniSentry.captureException(error, {
+                source: 'manual_trigger',
+                has_context: true
+            });
+        }
+
+        // Automatic error functions
+        function causeGlobalError() {
+            setTimeout(() => {
+                nonExistentFunction(); // Global error
+            }, 100);
+        }
+
+        function causeUnhandledRejection() {
+            new Promise((resolve, reject) => {
+                setTimeout(() => {
+                    reject(new Error('Unhandled promise rejection'));
+                }, 100);
+            });
+        }
+
+        let randomErrorInterval;
+        function startRandomErrors() {
+            if (randomErrorInterval) return;
+            
+            const errors = [
+                () => { throw new Error('Random error #' + Math.floor(Math.random() * 1000)); },
+                () => { Promise.reject(new Error('Random promise rejection')); },
+                () => { 
+                    const obj = null;
+                    return obj.randomProperty; 
+                }
+            ];
+            
+            randomErrorInterval = setInterval(() => {
+                const randomError = errors[Math.floor(Math.random() * errors.length)];
+                try {
+                    randomError();
+                } catch (e) {
+                    // Let the global handler catch it
+                    throw e;
+                }
+            }, 3000);
+            
+            MiniSentry.updateStatus('Random errors started (every 3 seconds)', 'info');
+        }
+
+        function stopRandomErrors() {
+            if (randomErrorInterval) {
+                clearInterval(randomErrorInterval);
+                randomErrorInterval = null;
+                MiniSentry.updateStatus('Random errors stopped', 'success');
+            }
+        }
+
+        // User context functions
+        function setUserContext() {
+            MiniSentry.setUser({
+                id: 'demo-user-' + Date.now(),
+                email: 'demo@example.com',
+                username: 'demo_user',
+                name: 'Demo User',
+                subscription: 'premium'
+            });
+            MiniSentry.updateStatus('User context set', 'success');
+        }
+
+        function setCustomTags() {
+            MiniSentry.setTag('feature', 'demo');
+            MiniSentry.setTag('version', '2.1.0');
+            MiniSentry.setTag('experiment', 'new_ui');
+            MiniSentry.updateStatus('Custom tags set', 'success');
+        }
+
+        function addBreadcrumb() {
+            MiniSentry.addBreadcrumb({
+                message: 'User performed an action',
+                category: 'user.action',
+                level: 'info',
+                data: {
+                    button: 'add_breadcrumb',
+                    timestamp: Date.now()
+                }
+            });
+            MiniSentry.updateStatus('Breadcrumb added', 'success');
+        }
+
+        function triggerWithFullContext() {
+            MiniSentry.addBreadcrumb({
+                message: 'About to trigger error with full context',
+                category: 'test'
+            });
+            
+            const error = new Error('Error with full context (user, tags, breadcrumbs)');
+            MiniSentry.captureException(error, {
+                source: 'manual_trigger',
+                full_context: true,
+                additional_data: {
+                    screen_resolution: `${screen.width}x${screen.height}`,
+                    viewport: `${window.innerWidth}x${window.innerHeight}`,
+                    connection: navigator.connection?.effectiveType || 'unknown'
+                }
+            });
+        }
+
+        // Performance functions
+        function measurePageLoad() {
+            if ('performance' in window) {
+                const navigation = performance.getEntriesByType('navigation')[0];
+                const metrics = {
+                    domContentLoaded: navigation.domContentLoadedEventEnd - navigation.domContentLoadedEventStart,
+                    loadComplete: navigation.loadEventEnd - navigation.loadEventStart,
+                    firstByte: navigation.responseStart - navigation.requestStart,
+                    totalTime: navigation.loadEventEnd - navigation.fetchStart
+                };
+                
+                MiniSentry.captureMessage('Page load performance', 'info', {
+                    metrics: metrics,
+                    type: 'performance'
+                });
+                
+                displayMetrics(metrics);
+            }
+        }
+
+        function measureFunction() {
+            const start = performance.now();
+            
+            // Simulate some work
+            let result = 0;
+            for (let i = 0; i < 1000000; i++) {
+                result += Math.random();
+            }
+            
+            const end = performance.now();
+            const duration = end - start;
+            
+            MiniSentry.captureMessage('Function performance', 'info', {
+                function_name: 'heavy_calculation',
+                duration_ms: duration,
+                type: 'performance'
+            });
+            
+            displayMetrics({ function_duration: duration });
+        }
+
+        function sendCustomMetric() {
+            const metric = {
+                name: 'custom_metric',
+                value: Math.random() * 100,
+                unit: 'percentage',
+                timestamp: Date.now()
+            };
+            
+            MiniSentry.captureMessage('Custom metric', 'info', {
+                metric: metric,
+                type: 'custom_metric'
+            });
+            
+            displayMetrics({ custom_metric: metric.value });
+        }
+
+        function displayMetrics(metrics) {
+            const metricsEl = document.getElementById('metrics');
+            metricsEl.innerHTML = '';
+            
+            for (const [key, value] of Object.entries(metrics)) {
+                const item = document.createElement('div');
+                item.className = 'metric-item';
+                item.textContent = `${key}: ${typeof value === 'number' ? value.toFixed(2) : value}`;
+                metricsEl.appendChild(item);
+            }
+        }
+
+        // Initialize with some default breadcrumbs
+        window.addEventListener('load', () => {
+            // Add some initial breadcrumbs
+            if (window.MiniSentry) {
+                MiniSentry.addBreadcrumb({
+                    message: 'Page loaded',
+                    category: 'navigation'
+                });
+            }
+        });
+
+        // Track page interactions
+        document.addEventListener('click', (event) => {
+            if (event.target.tagName === 'BUTTON' && MiniSentry.initialized) {
+                MiniSentry.addBreadcrumb({
+                    message: `Button clicked: ${event.target.textContent}`,
+                    category: 'ui.click',
+                    data: {
+                        button_text: event.target.textContent,
+                        class_name: event.target.className
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>
